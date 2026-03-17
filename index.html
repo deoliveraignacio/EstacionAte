@@ -180,6 +180,7 @@
     <div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0;"></div>
     <div style="font-size:11px;color:#4ECDC4;font-weight:700;padding:0 8px;margin-bottom:4px;">OPCIONES</div>
     <button class="filter-btn" id="f-noche" onclick="toggleNoche()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🌙 Modo noche</button>
+    <button class="filter-btn" id="f-trafico" onclick="toggleTrafico()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🚦 Tráfico</button>
     <button onclick="cerrarSesion()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;background:rgba(231,76,60,0.2);color:#e74c3c;border:0.5px solid rgba(231,76,60,0.3);font-size:12px;cursor:pointer;margin-top:auto;">🚪 Cerrar sesión</button>
   </div>
 
@@ -621,6 +622,27 @@ function toggleNoche() {
   modoNocheManual = !modoNocheManual;
   document.getElementById('f-noche').classList.toggle('active', modoNocheManual);
   aplicarEstiloMapa();
+}
+
+// CAPA DE TRAFICO
+var traficoActivo = false;
+var trafficLayer = null;
+
+function toggleTrafico() {
+  traficoActivo = !traficoActivo;
+  document.getElementById('f-trafico').classList.toggle('active', traficoActivo);
+  if (traficoActivo) {
+    if (!trafficLayer) {
+      trafficLayer = new google.maps.TrafficLayer();
+    }
+    trafficLayer.setMap(map);
+    mostrarToast('🚦 Tráfico en tiempo real activado');
+  } else {
+    if (trafficLayer) {
+      trafficLayer.setMap(null);
+    }
+    mostrarToast('🚦 Tráfico desactivado');
+  }
 }
 
 function esNoche() {
