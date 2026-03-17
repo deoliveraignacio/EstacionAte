@@ -165,18 +165,22 @@
     </div>
   </div>
 
-  <!-- BUSCADOR -->
-  <div style="padding:8px 12px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;gap:8px;">
-    <input id="search-input" type="text" placeholder="🔎 Buscar calle o barrio..." style="flex:1;padding:8px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;" onkeydown="if(event.key==='Enter')buscarCalle()">
-    <button onclick="buscarCalle()" style="padding:8px 14px;border-radius:20px;background:#1a1a2e;color:#4ECDC4;border:none;font-size:13px;cursor:pointer;">Ir</button>
+  <!-- BUSCADOR COMPACTO -->
+  <div style="padding:6px 12px;background:#1a1a2e;display:flex;gap:8px;align-items:center;">
+    <input id="search-input" type="text" placeholder="🔎 Buscar dirección..." style="flex:1;padding:6px 12px;border-radius:20px;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:13px;" onkeydown="if(event.key==='Enter')buscarCalle()">
+    <button onclick="buscarCalle()" style="padding:6px 14px;border-radius:20px;background:#4ECDC4;color:#1a1a2e;border:none;font-size:12px;font-weight:700;cursor:pointer;">Ir</button>
   </div>
 
-  <!-- FILTROS -->
-  <div class="filter-bar" id="filter-bar">
-    <button class="filter-btn active" id="f-todos" onclick="filtrar('todos')">🗺️ Todos</button>
-    <button class="filter-btn" id="f-gratuito" onclick="filtrar('gratuito')">🆓 Gratuitos</button>
-    <button class="filter-btn" id="f-medido" onclick="filtrar('medido')">💰 Medidos</button>
-    <button class="filter-btn" id="f-noche" onclick="toggleNoche()">🌙 Noche</button>
+  <!-- PANEL LATERAL DE FILTROS -->
+  <div id="panel-lateral" style="display:none;position:fixed;left:0;top:120px;bottom:70px;width:160px;background:#1a1a2e;z-index:998;border-radius:0 16px 16px 0;padding:12px 8px;display:flex;flex-direction:column;gap:8px;box-shadow:4px 0 12px rgba(0,0,0,0.3);">
+    <div style="font-size:11px;color:#4ECDC4;font-weight:700;padding:0 8px;margin-bottom:4px;">FILTROS</div>
+    <button class="filter-btn active" id="f-todos" onclick="filtrar('todos')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🗺️ Todos</button>
+    <button class="filter-btn" id="f-gratuito" onclick="filtrar('gratuito')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🆓 Gratuitos</button>
+    <button class="filter-btn" id="f-medido" onclick="filtrar('medido')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">💰 Medidos</button>
+    <div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0;"></div>
+    <div style="font-size:11px;color:#4ECDC4;font-weight:700;padding:0 8px;margin-bottom:4px;">OPCIONES</div>
+    <button class="filter-btn" id="f-noche" onclick="toggleNoche()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🌙 Modo noche</button>
+    <button onclick="cerrarSesion()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;background:rgba(231,76,60,0.2);color:#e74c3c;border:0.5px solid rgba(231,76,60,0.3);font-size:12px;cursor:pointer;margin-top:auto;">🚪 Cerrar sesión</button>
   </div>
 
   <!-- MAPA -->
@@ -264,22 +268,26 @@
   </div>
 
   <!-- NAVBAR -->
-  <nav class="navbar">
-    <button class="nav-btn active" id="nav-mapa" onclick="cambiarTab('mapa')">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-      Mapa
+  <nav class="navbar" style="height:56px;">
+    <button class="nav-btn active" id="nav-mapa" onclick="cambiarTab('mapa')" style="padding:6px 0 4px;">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      <span style="font-size:9px;">Mapa</span>
     </button>
-    <button class="nav-btn" id="nav-feed" onclick="cambiarTab('feed')">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-      Reportes
+    <button class="nav-btn" id="nav-filtros" onclick="toggleFiltros()" style="padding:6px 0 4px;">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+      <span style="font-size:9px;">Filtros</span>
     </button>
-    <button class="nav-btn" id="nav-ranking" onclick="cambiarTab('ranking')">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-      Ranking
+    <button class="nav-btn" id="nav-feed" onclick="cambiarTab('feed')" style="padding:6px 0 4px;">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      <span style="font-size:9px;">Reportes</span>
     </button>
-    <button class="nav-btn" id="nav-perfil" onclick="cambiarTab('perfil')">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-      Perfil
+    <button class="nav-btn" id="nav-ranking" onclick="cambiarTab('ranking')" style="padding:6px 0 4px;">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span style="font-size:9px;">Ranking</span>
+    </button>
+    <button class="nav-btn" id="nav-perfil" onclick="cambiarTab('perfil')" style="padding:6px 0 4px;">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span style="font-size:9px;">Perfil</span>
     </button>
   </nav>
 </div>
@@ -587,9 +595,7 @@ function toggleNoche() {
 }
 
 function esNoche() {
-  if (modoNocheManual) return true;
-  const hora = new Date().getHours();
-  return hora >= 20 || hora < 7;
+  return modoNocheManual;
 }
 
 function aplicarEstiloMapa() {
@@ -650,13 +656,7 @@ setInterval(() => {
 }, 60 * 1000);
 
 function entrar() {
-  const nombre = document.getElementById('login-nombre').value.trim();
-  if (!nombre) { alert('Ingresá tu nombre o apodo'); return; }
-  usuarioActual = nombre;
-  localStorage.setItem('estacionate_user', nombre);
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  actualizarPerfil();
+  entrarSinRegistro();
 }
 
 function actualizarPerfil() {
@@ -666,11 +666,71 @@ function actualizarPerfil() {
   document.getElementById('pts-badge').textContent = '★ ' + usuarioPuntos + ' pts';
   document.getElementById('perfil-avatar').textContent = usuarioActual.substring(0,2).toUpperCase();
   document.getElementById('perfil-name').textContent = usuarioActual;
+  const tipo = localStorage.getItem('estacionate_tipo');
+  const email = localStorage.getItem('estacionate_email');
+  document.getElementById('perfil-level').textContent = (tipo === 'registrado' ? '✅ Cuenta registrada · ' : '👤 Invitado · ') + (usuarioPuntos < 50 ? 'Nivel 1 · Nuevo' : usuarioPuntos < 150 ? 'Nivel 2 · Explorador' : usuarioPuntos < 300 ? 'Nivel 3 · Avanzado' : 'Nivel 4 · Experto');
   document.getElementById('stat-reportes').textContent = usuarioReportes;
   document.getElementById('stat-pts').textContent = usuarioPuntos;
   document.getElementById('stat-precision').textContent = usuarioReportes > 0 ? '90%' : '-';
-  const nivel = usuarioPuntos < 50 ? 'Nivel 1 · Nuevo' : usuarioPuntos < 150 ? 'Nivel 2 · Explorador' : usuarioPuntos < 300 ? 'Nivel 3 · Avanzado' : 'Nivel 4 · Experto';
-  document.getElementById('perfil-level').textContent = nivel;
+
+}
+
+// TOGGLE PANEL LATERAL
+var panelVisible = false;
+function toggleFiltros() {
+  panelVisible = !panelVisible;
+  var panel = document.getElementById('panel-lateral');
+  panel.style.display = panelVisible ? 'flex' : 'none';
+  document.getElementById('nav-filtros').classList.toggle('active', panelVisible);
+}
+
+// TABS LOGIN
+function mostrarTab(tab) {
+  document.getElementById('form-registro').style.display = tab === 'registro' ? 'block' : 'none';
+  document.getElementById('form-guest').style.display = tab === 'guest' ? 'block' : 'none';
+  document.getElementById('tab-registro').style.background = tab === 'registro' ? '#4ECDC4' : 'transparent';
+  document.getElementById('tab-registro').style.color = tab === 'registro' ? '#1a1a2e' : '#4ECDC4';
+  document.getElementById('tab-guest').style.background = tab === 'guest' ? '#4ECDC4' : 'transparent';
+  document.getElementById('tab-guest').style.color = tab === 'guest' ? '#1a1a2e' : '#4ECDC4';
+}
+
+// REGISTRO CON CUENTA
+function registrarse() {
+  const nombre = document.getElementById('reg-nombre').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value.trim();
+  if (!nombre) { mostrarToast('Ingresá tu nombre'); return; }
+  if (!email) { mostrarToast('Ingresá tu email'); return; }
+  if (!pass || pass.length < 6) { mostrarToast('La contraseña debe tener al menos 6 caracteres'); return; }
+  usuarioActual = nombre;
+  localStorage.setItem('estacionate_user', nombre);
+  localStorage.setItem('estacionate_email', email);
+  localStorage.setItem('estacionate_tipo', 'registrado');
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  actualizarPerfil();
+  mostrarToast('¡Bienvenido ' + nombre + '! Cuenta creada ✅');
+}
+
+// ENTRAR SIN REGISTRO
+function entrarSinRegistro() {
+  const nombre = document.getElementById('guest-nombre').value.trim();
+  if (!nombre) { mostrarToast('Ingresá tu nombre o apodo'); return; }
+  usuarioActual = nombre;
+  localStorage.setItem('estacionate_user', nombre);
+  localStorage.setItem('estacionate_tipo', 'guest');
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  actualizarPerfil();
+}
+
+// CERRAR SESION
+function cerrarSesion() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('estacionate_user');
+  localStorage.removeItem('estacionate_email');
+  localStorage.removeItem('estacionate_tipo');
+  location.reload();
 }
 
 var selectModeActivo = false;
