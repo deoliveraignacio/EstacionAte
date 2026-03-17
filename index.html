@@ -694,6 +694,11 @@ function mostrarTab(tab) {
   document.getElementById('tab-guest').style.color = tab === 'guest' ? '#1a1a2e' : '#4ECDC4';
 }
 
+// REGISTRO CON REDES SOCIALES
+function registrarConRed(red) {
+  mostrarToast('Próximamente: login con ' + red + ' 🚀');
+}
+
 // REGISTRO CON CUENTA
 function registrarse() {
   const nombre = document.getElementById('reg-nombre').value.trim();
