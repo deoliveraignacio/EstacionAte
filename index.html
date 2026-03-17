@@ -2,19 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EstacionAte 🚗</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; }
   #map { width: 100%; height: calc(100vh - 120px); }
 
   /* Top bar */
-  .topbar { background: #1a1a2e; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
-  .app-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .topbar { background: #1a1a2e; padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+  .app-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px; font-family: 'Inter', sans-serif; }
   .app-title span { color: #4ECDC4; }
   .user-info { display: flex; align-items: center; gap: 8px; }
-  .points-badge { background: rgba(78,205,196,0.2); border: 1px solid #4ECDC4; border-radius: 12px; padding: 4px 10px; font-size: 13px; color: #4ECDC4; font-weight: 600; }
+  .points-badge { background: rgba(78,205,196,0.15); border: 1px solid rgba(78,205,196,0.4); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #4ECDC4; font-weight: 700; font-family: 'Inter', sans-serif; }
 
   /* Bottom navbar */
   .navbar { display: flex; background: #1a1a2e; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; }
@@ -32,6 +33,7 @@
 
   /* Modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: flex-end; }
+  #modal-nav { align-items: flex-end; }
   .modal-overlay.open { display: flex; }
   .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; }
   .modal h3 { font-size: 18px; margin-bottom: 16px; color: #1a1a2e; }
@@ -88,8 +90,8 @@
   .page-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
   .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
   .filter-bar { display: flex; gap: 8px; padding: 10px 16px; background: var(--color-background-primary); border-bottom: 0.5px solid var(--color-border-tertiary); overflow-x: auto; }
-  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-  .filter-btn.active { background: #1a1a2e; color: #4ECDC4; border-color: #4ECDC4; font-weight: 500; }
+  .filter-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(78,205,196,0.3); background: rgba(78,205,196,0.08); color: #4ECDC4; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Inter', sans-serif; }
+  .filter-btn.active { background: #4ECDC4; color: #1a1a2e; border-color: #4ECDC4; font-weight: 700; }
   .select-mode-bar { display: none; position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; border: 1px solid #4ECDC4; text-align: center; white-space: nowrap; }
   .select-mode-bar.active { display: block; }
   .crosshair { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; z-index: 999; pointer-events: none; }
@@ -166,22 +168,27 @@
   </div>
 
   <!-- BUSCADOR COMPACTO -->
-  <div style="padding:6px 12px;background:#1a1a2e;display:flex;gap:8px;align-items:center;">
-    <input id="search-input" type="text" placeholder="🔎 Buscar dirección..." style="flex:1;padding:6px 12px;border-radius:20px;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:13px;" onkeydown="if(event.key==='Enter')buscarCalle()">
-    <button onclick="buscarCalle()" style="padding:6px 14px;border-radius:20px;background:#4ECDC4;color:#1a1a2e;border:none;font-size:12px;font-weight:700;cursor:pointer;">Ir</button>
+  <div style="padding:6px 14px;background:#1a1a2e;display:flex;gap:8px;align-items:center;">
+    <div style="flex:1;display:flex;align-items:center;background:rgba(255,255,255,0.08);border-radius:24px;padding:0 12px;border:1px solid rgba(78,205,196,0.2);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2.5" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search-input" type="text" placeholder="Buscar dirección..." style="flex:1;padding:7px 8px;border:none;background:transparent;color:#fff;font-size:13px;font-family:'Inter',sans-serif;outline:none;" onkeydown="if(event.key==='Enter')buscarCalle()">
+    </div>
+    <button onclick="buscarCalle()" style="padding:7px 14px;border-radius:20px;background:#4ECDC4;color:#1a1a2e;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;">Ir</button>
   </div>
 
   <!-- PANEL LATERAL DE FILTROS -->
-  <div id="panel-lateral" style="display:none;position:fixed;left:0;top:120px;bottom:70px;width:160px;background:#1a1a2e;z-index:998;border-radius:0 16px 16px 0;padding:12px 8px;display:flex;flex-direction:column;gap:8px;box-shadow:4px 0 12px rgba(0,0,0,0.3);">
-    <div style="font-size:11px;color:#4ECDC4;font-weight:700;padding:0 8px;margin-bottom:4px;">FILTROS</div>
-    <button class="filter-btn active" id="f-todos" onclick="filtrar('todos')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🗺️ Todos</button>
-    <button class="filter-btn" id="f-gratuito" onclick="filtrar('gratuito')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🆓 Gratuitos</button>
-    <button class="filter-btn" id="f-medido" onclick="filtrar('medido')" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">💰 Medidos</button>
-    <div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0;"></div>
-    <div style="font-size:11px;color:#4ECDC4;font-weight:700;padding:0 8px;margin-bottom:4px;">OPCIONES</div>
-    <button class="filter-btn" id="f-noche" onclick="toggleNoche()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🌙 Modo noche</button>
-    <button class="filter-btn" id="f-trafico" onclick="toggleTrafico()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;">🚦 Tráfico</button>
-    <button onclick="cerrarSesion()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;background:rgba(231,76,60,0.2);color:#e74c3c;border:0.5px solid rgba(231,76,60,0.3);font-size:12px;cursor:pointer;margin-top:auto;">🚪 Cerrar sesión</button>
+  <div id="panel-lateral" style="display:none;position:fixed;left:0;top:112px;bottom:56px;width:150px;background:rgba(15,15,35,0.97);z-index:998;border-radius:0 20px 20px 0;padding:14px 10px;flex-direction:column;gap:6px;box-shadow:6px 0 24px rgba(0,0,0,0.4);backdrop-filter:blur(10px);">
+    <div style="font-size:10px;color:rgba(78,205,196,0.7);font-weight:700;padding:0 6px;margin-bottom:6px;letter-spacing:1px;font-family:'Inter',sans-serif;">FILTROS</div>
+    <button class="filter-btn active" id="f-todos" onclick="filtrar('todos')" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">🗺️ Todos</button>
+    <button class="filter-btn" id="f-gratuito" onclick="filtrar('gratuito')" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">🆓 Gratuitos</button>
+    <button class="filter-btn" id="f-medido" onclick="filtrar('medido')" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">💰 Medidos</button>
+    <div style="height:0.5px;background:rgba(78,205,196,0.2);margin:6px 0;"></div>
+    <div style="font-size:10px;color:rgba(78,205,196,0.7);font-weight:700;padding:0 6px;margin-bottom:6px;letter-spacing:1px;font-family:'Inter',sans-serif;">OPCIONES</div>
+    <button class="filter-btn" id="f-noche" onclick="toggleNoche()" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">🌙 Noche</button>
+    <button class="filter-btn" id="f-trafico" onclick="toggleTrafico()" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">🚦 Tráfico</button>
+    <button class="filter-btn" id="f-nav" onclick="abrirNavegacion()" style="width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-family:'Inter',sans-serif;">🧭 Navegar</button>
+    <div style="flex:1;"></div>
+    <button onclick="cerrarSesion()" style="width:100%;text-align:left;padding:8px 12px;border-radius:10px;background:rgba(231,76,60,0.15);color:#ff6b6b;border:0.5px solid rgba(231,76,60,0.3);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">🚪 Salir</button>
   </div>
 
   <!-- MAPA -->
@@ -291,6 +298,73 @@
       <span style="font-size:9px;">Perfil</span>
     </button>
   </nav>
+</div>
+
+<!-- MODAL NAVEGACION -->
+<div class="modal-overlay" id="modal-nav">
+  <div class="modal" style="border-radius:20px 20px 0 0;padding:0;overflow:hidden;max-height:75vh;overflow-y:auto;">
+    
+    <!-- Header -->
+    <div style="background:#1a1a2e;padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <button onclick="cerrarNavModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div style="font-size:16px;font-weight:700;color:#fff;font-family:'Inter',sans-serif;">¿A dónde vas?</div>
+    </div>
+
+    <!-- Buscador con autocomplete -->
+    <div style="padding:16px;background:#fff;">
+      <div style="position:relative;">
+        <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;">🔍</div>
+        <input id="nav-destino" type="text" placeholder="Buscar dirección o lugar..." 
+          style="width:100%;padding:12px 12px 12px 40px;border-radius:12px;border:1.5px solid #4ECDC4;background:#f8f8f8;color:#1a1a2e;font-size:15px;font-family:'Inter',sans-serif;outline:none;"
+          oninput="buscarSugerencias(this.value)">
+      </div>
+
+      <!-- Sugerencias -->
+      <div id="sugerencias-nav" style="margin-top:8px;border-radius:12px;overflow:hidden;border:0.5px solid #eee;display:none;"></div>
+
+      <!-- Atajos rapidos -->
+      <div style="margin-top:10px;">
+        <div style="font-size:12px;color:#999;margin-bottom:8px;font-family:'Inter',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Lugares frecuentes</div>
+        <div onclick="setDestino('Obelisco, Buenos Aires')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:6px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <div style="width:36px;height:36px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🗺️</div>
+          <div><div style="font-size:14px;font-weight:600;color:#1a1a2e;font-family:'Inter',sans-serif;">Obelisco</div><div style="font-size:12px;color:#999;">Centro, Buenos Aires</div></div>
+        </div>
+        <div onclick="setDestino('Palermo, Buenos Aires')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:6px;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <div style="width:36px;height:36px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🌳</div>
+          <div><div style="font-size:14px;font-weight:600;color:#1a1a2e;font-family:'Inter',sans-serif;">Palermo</div><div style="font-size:12px;color:#999;">Palermo, Buenos Aires</div></div>
+        </div>
+        <div onclick="setDestino('Puerto Madero, Buenos Aires')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+          <div style="width:36px;height:36px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">⚓</div>
+          <div><div style="font-size:14px;font-weight:600;color:#1a1a2e;font-family:'Inter',sans-serif;">Puerto Madero</div><div style="font-size:12px;color:#999;">Puerto Madero, Buenos Aires</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boton iniciar -->
+    <div style="padding:16px;background:#fff;border-top:0.5px solid #eee;">
+      <button class="btn-libre" onclick="iniciarNavegacion()" style="margin-bottom:0;font-family:'Inter',sans-serif;font-weight:700;font-size:15px;">🧭 Iniciar navegación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTA ESTACIONAMIENTO -->
+<div id="alerta-parking" style="display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1a1a2e;border:2px solid #2ECC71;border-radius:16px;padding:14px 20px;z-index:3000;max-width:320px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+  <div style="font-size:14px;font-weight:700;color:#2ECC71;margin-bottom:4px;">🟢 ¡Lugar libre cerca!</div>
+  <div id="alerta-texto" style="font-size:12px;color:#fff;margin-bottom:10px;"></div>
+  <div style="display:flex;gap:8px;">
+    <button onclick="irAlLugar()" style="flex:1;padding:8px;background:#2ECC71;color:#1a1a2e;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Ver en mapa</button>
+    <button onclick="cerrarAlerta()" style="flex:1;padding:8px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Ignorar</button>
+  </div>
+</div>
+
+<!-- BARRA DE NAVEGACION ACTIVA -->
+<div id="barra-nav" style="display:none;position:fixed;top:52px;left:0;right:0;background:linear-gradient(135deg,#0f0f2e,#1a1a3e);border-bottom:2px solid #4ECDC4;padding:10px 16px;z-index:997;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+  <div style="width:36px;height:36px;background:rgba(78,205,196,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid rgba(78,205,196,0.3);">🧭</div>
+  <div style="flex:1;">
+    <div id="nav-instruccion" style="font-size:13px;font-weight:700;color:#fff;font-family:'Inter',sans-serif;">Calculando ruta...</div>
+    <div id="nav-destino-txt" style="font-size:11px;color:#4ECDC4;font-family:'Inter',sans-serif;margin-top:2px;"></div>
+  </div>
+  <button onclick="detenerNavegacion()" style="padding:7px 14px;background:rgba(231,76,60,0.2);color:#ff6b6b;border:1px solid rgba(231,76,60,0.4);border-radius:20px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;">✕ Salir</button>
 </div>
 
 <!-- MODAL REPORTE -->
@@ -622,6 +696,198 @@ function toggleNoche() {
   modoNocheManual = !modoNocheManual;
   document.getElementById('f-noche').classList.toggle('active', modoNocheManual);
   aplicarEstiloMapa();
+}
+
+// NAVEGACION GPS CON ALERTAS
+var navegandoActivo = false;
+var directionsService = null;
+var directionsRenderer = null;
+var destinoLoc = null;
+var alertaLugar = null;
+var navInterval = null;
+
+// AUTOCOMPLETE DE DIRECCIONES
+var autocompleteService = null;
+var placesService = null;
+
+function buscarSugerencias(texto) {
+  if (!texto || texto.length < 3) {
+    document.getElementById('sugerencias-nav').style.display = 'none';
+    return;
+  }
+  if (!autocompleteService) {
+    autocompleteService = new google.maps.places.AutocompleteService();
+  }
+  autocompleteService.getPlacePredictions({
+    input: texto,
+    componentRestrictions: { country: 'ar' },
+    location: new google.maps.LatLng(-34.6037, -58.3816),
+    radius: 50000
+  }, function(predictions, status) {
+    var container = document.getElementById('sugerencias-nav');
+    if (status !== 'OK' || !predictions) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'block';
+    container.innerHTML = predictions.slice(0, 5).map(p => `
+      <div onclick="setDestino('${p.description}')" 
+        style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:0.5px solid #f0f0f0;background:#fff;"
+        onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">
+        <div style="font-size:16px;">📍</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1a1a2e;font-family:'Inter',sans-serif;">${p.structured_formatting.main_text}</div>
+          <div style="font-size:12px;color:#999;">${p.structured_formatting.secondary_text || ''}</div>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+function setDestino(direccion) {
+  document.getElementById('nav-destino').value = direccion;
+  document.getElementById('sugerencias-nav').style.display = 'none';
+}
+
+function abrirNavegacion() {
+  document.getElementById('modal-nav').classList.add('open');
+  if (panelVisible) toggleFiltros();
+}
+
+function cerrarNavModal() {
+  document.getElementById('modal-nav').classList.remove('open');
+}
+
+function iniciarNavegacion() {
+  var destino = document.getElementById('nav-destino').value.trim();
+  if (!destino) { mostrarToast('Ingresá un destino'); return; }
+  cerrarNavModal();
+
+  if (!directionsService) {
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+      map: map,
+      suppressMarkers: true,
+      polylineOptions: { strokeColor: '#4ECDC4', strokeWeight: 5, strokeOpacity: 0.9 }
+    });
+  }
+
+  var origen = window.userLoc || { lat: -34.6037, lng: -58.3816 };
+
+  directionsService.route({
+    origin: origen,
+    destination: destino + ', Buenos Aires, Argentina',
+    travelMode: google.maps.TravelMode.DRIVING
+  }, function(result, status) {
+    if (status === 'OK') {
+      directionsRenderer.setDirections(result);
+      var leg = result.routes[0].legs[0];
+      destinoLoc = leg.end_location;
+      navegandoActivo = true;
+
+      // Marcador de auto en posicion actual
+      if (window.autoMarker) window.autoMarker.setMap(null);
+      window.autoMarker = new google.maps.Marker({
+        position: leg.start_location,
+        map: map,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#1a1a2e" stroke="#4ECDC4" stroke-width="2"/><text x="20" y="26" text-anchor="middle" font-size="18">🚗</text></svg>'),
+          scaledSize: new google.maps.Size(40, 40),
+          anchor: new google.maps.Point(20, 20)
+        },
+        title: 'Tu posición'
+      });
+
+      // Marcador de destino - pin clasico de Google Maps
+      if (window.destinoMarker) window.destinoMarker.setMap(null);
+      window.destinoMarker = new google.maps.Marker({
+        position: leg.end_location,
+        map: map,
+        icon: {
+          url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          scaledSize: new google.maps.Size(40, 40),
+          anchor: new google.maps.Point(20, 40)
+        },
+        title: leg.end_address,
+        animation: google.maps.Animation.DROP
+      });
+
+      // Mover auto siguiendo GPS
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+          if (!navegandoActivo) return;
+          var newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (window.autoMarker) window.autoMarker.setPosition(newPos);
+        });
+      }
+
+      var barraNav = document.getElementById('barra-nav');
+      barraNav.style.display = 'flex';
+      document.getElementById('nav-instruccion').textContent = '🚗 Hacia ' + leg.end_address.split(',')[0];
+      document.getElementById('nav-destino-txt').textContent = '📍 ' + leg.distance.text + ' · ⏱ ' + leg.duration.text;
+
+      mostrarToast('🧭 Navegación iniciada — buscando estacionamiento cerca');
+
+      // Escanear reportes cada 15 segundos
+      navInterval = setInterval(escanearEstacionamientos, 15000);
+      escanearEstacionamientos();
+    } else {
+      mostrarToast('No se encontró la dirección. Intentá de nuevo.');
+    }
+  });
+}
+
+function escanearEstacionamientos() {
+  if (!navegandoActivo || !destinoLoc || !window.ultimaData) return;
+  var ahora = Date.now();
+  var lugaresLibres = [];
+
+  Object.entries(window.ultimaData).forEach(([id, r]) => {
+    if (r.tipo !== 'libre') return;
+    if (ahora - r.timestamp > 3 * 60 * 1000) return;
+
+    // Calcular distancia al destino
+    var distLat = Math.abs(r.lat - destinoLoc.lat());
+    var distLng = Math.abs(r.lng - destinoLoc.lng());
+    var distMetros = Math.sqrt(distLat * distLat + distLng * distLng) * 111000;
+
+    if (distMetros <= 400) {
+      lugaresLibres.push({ id, ...r, distancia: Math.round(distMetros) });
+    }
+  });
+
+  if (lugaresLibres.length > 0) {
+    var lugar = lugaresLibres.sort((a,b) => a.distancia - b.distancia)[0];
+    alertaLugar = lugar;
+    var tipoTexto = lugar.tipoEstac === 'medido' ? '💰 Medido' : '🆓 Gratuito';
+    document.getElementById('alerta-texto').textContent =
+      tipoTexto + ' · A ' + lugar.distancia + 'm de tu destino · Reportado por ' + lugar.usuario;
+    document.getElementById('alerta-parking').style.display = 'block';
+  }
+}
+
+function irAlLugar() {
+  if (!alertaLugar) return;
+  map.setCenter({ lat: alertaLugar.lat, lng: alertaLugar.lng });
+  map.setZoom(17);
+  cerrarAlerta();
+  mostrarToast('📍 Mostrando el lugar libre en el mapa');
+}
+
+function cerrarAlerta() {
+  document.getElementById('alerta-parking').style.display = 'none';
+  alertaLugar = null;
+}
+
+function detenerNavegacion() {
+  navegandoActivo = false;
+  if (navInterval) { clearInterval(navInterval); navInterval = null; }
+  if (directionsRenderer) directionsRenderer.setDirections({ routes: [] });
+  if (window.autoMarker) { window.autoMarker.setMap(null); window.autoMarker = null; }
+  if (window.destinoMarker) { window.destinoMarker.setMap(null); window.destinoMarker = null; }
+  document.getElementById('barra-nav').style.display = 'none';
+  cerrarAlerta();
+  mostrarToast('✅ Navegación finalizada');
 }
 
 // CAPA DE TRAFICO
@@ -1027,6 +1293,6 @@ window.onload = function() {
 }
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD312eCyHcvPHQtF3oEro9xUZgRGNaBQ9I&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD312eCyHcvPHQtF3oEro9xUZgRGNaBQ9I&libraries=places,directions,geometry&callback=initMap" async defer></script>
 </body>
 </html>
