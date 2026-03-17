@@ -685,7 +685,18 @@ setInterval(() => {
 }, 60 * 1000);
 
 function entrar() {
-  entrarSinRegistro();
+  var input = document.getElementById('login-nombre');
+  if (input && input.value.trim()) {
+    var nombre = input.value.trim();
+    usuarioActual = nombre;
+    localStorage.setItem('estacionate_user', nombre);
+    localStorage.setItem('estacionate_tipo', 'guest');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    actualizarPerfil();
+  } else {
+    entrarSinRegistro();
+  }
 }
 
 function actualizarPerfil() {
@@ -779,8 +790,12 @@ function registrarse() {
 
 // ENTRAR SIN REGISTRO
 function entrarSinRegistro() {
-  const nombre = document.getElementById('guest-nombre').value.trim();
-  if (!nombre) { mostrarToast('Ingresá tu nombre o apodo'); return; }
+  var inputGuest = document.getElementById('guest-nombre');
+  var inputNombre = document.getElementById('login-nombre');
+  var nombre = '';
+  if (inputGuest) nombre = inputGuest.value.trim();
+  if (!nombre && inputNombre) nombre = inputNombre.value.trim();
+  if (!nombre) nombre = 'Anónimo';
   usuarioActual = nombre;
   localStorage.setItem('estacionate_user', nombre);
   localStorage.setItem('estacionate_tipo', 'guest');
