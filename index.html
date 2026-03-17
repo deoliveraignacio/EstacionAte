@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EstacionAte 🚗</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+  #map { width: 100%; height: calc(100vh - 120px); }
+
+  /* Top bar */
+  .topbar { background: #1a1a2e; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .app-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .app-title span { color: #4ECDC4; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .points-badge { background: rgba(78,205,196,0.2); border: 1px solid #4ECDC4; border-radius: 12px; padding: 4px 10px; font-size: 13px; color: #4ECDC4; font-weight: 600; }
+
+  /* Bottom navbar */
+  .navbar { display: flex; background: #1a1a2e; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; }
+  .nav-btn { flex: 1; padding: 10px 0 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: none; background: none; cursor: pointer; color: #888; font-size: 10px; }
+  .nav-btn.active { color: #4ECDC4; }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  /* Report button */
+  .report-fab { position: fixed; bottom: 70px; right: 16px; width: 56px; height: 56px; border-radius: 50%; background: #4ECDC4; border: none; cursor: pointer; font-size: 28px; color: #1a1a2e; font-weight: 700; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+
+  /* Screens */
+  .screen { display: none; padding: 16px; padding-bottom: 70px; overflow-y: auto; height: calc(100vh - 50px); }
+  .screen.active { display: block; }
+  #screen-mapa { display: block; padding: 0; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; }
+  .modal h3 { font-size: 18px; margin-bottom: 16px; color: #1a1a2e; }
+  .modal-btns { display: flex; gap: 10px; margin-bottom: 12px; }
+  .btn-libre { flex: 1; padding: 14px; background: #2ECC71; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-ocupado { flex: 1; padding: 14px; background: #E74C3C; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-cancelar { width: 100%; padding: 12px; background: #f0f0f0; color: #666; border: none; border-radius: 12px; font-size: 14px; cursor: pointer; }
+
+  /* Feed */
+  .feed-item { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .feed-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .feed-dot.libre { background: #2ECC71; }
+  .feed-dot.ocupado { background: #E74C3C; }
+  .feed-content { flex: 1; }
+  .feed-title { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .feed-sub { font-size: 12px; color: #888; margin-top: 2px; }
+  .feed-time { font-size: 11px; color: #aaa; }
+
+  /* Ranking */
+  .rank-card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .rank-num { font-size: 18px; font-weight: 700; color: #ccc; width: 24px; }
+  .rank-num.gold { color: #f1c40f; }
+  .rank-num.silver { color: #bdc3c7; }
+  .rank-num.bronze { color: #cd7f32; }
+  .rank-avatar { width: 40px; height: 40px; border-radius: 50%; background: #4ECDC4; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #1a1a2e; font-size: 14px; }
+  .rank-info { flex: 1; }
+  .rank-name { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+  .rank-reportes { font-size: 12px; color: #888; }
+  .rank-pts { font-size: 14px; font-weight: 700; color: #4ECDC4; }
+
+  /* Perfil */
+  .perfil-header { background: #1a1a2e; border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; color: #fff; }
+  .perfil-avatar { width: 64px; height: 64px; border-radius: 50%; background: #4ECDC4; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .perfil-name { font-size: 18px; font-weight: 700; }
+  .perfil-level { font-size: 13px; color: #4ECDC4; margin-top: 4px; }
+  .stats-grid { display: grid; grid-columns: repeat(3, 1fr); grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-box { background: #fff; border-radius: 12px; padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .stat-num { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
+  .section-title { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+  .badges-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge-chip { background: #fff; border-radius: 20px; padding: 6px 14px; font-size: 12px; color: #555; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+  /* Login */
+  #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a2e; padding: 20px; }
+  .login-title { font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .login-title span { color: #4ECDC4; }
+  .login-sub { color: #888; font-size: 15px; margin-bottom: 40px; text-align: center; }
+  .login-input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #333; background: #2a2a3e; color: #fff; font-size: 15px; margin-bottom: 12px; }
+  .login-input::placeholder { color: #666; }
+  .login-btn { width: 100%; padding: 15px; background: #4ECDC4; color: #1a1a2e; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 12px; }
+  .login-hint { color: #555; font-size: 13px; text-align: center; }
+
+  .page-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+  .filter-bar { display: flex; gap: 8px; padding: 10px 16px; background: var(--color-background-primary); border-bottom: 0.5px solid var(--color-border-tertiary); overflow-x: auto; }
+  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .filter-btn.active { background: #1a1a2e; color: #4ECDC4; border-color: #4ECDC4; font-weight: 500; }
+  .select-mode-bar { display: none; position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; border: 1px solid #4ECDC4; text-align: center; white-space: nowrap; }
+  .select-mode-bar.active { display: block; }
+  .crosshair { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; z-index: 999; pointer-events: none; }
+  .crosshair.active { display: block; }
+  .crosshair::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #E74C3C; transform: translateY(-50%); }
+  .crosshair::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #E74C3C; transform: translateX(-50%); }
+  .confirm-bar { display: none; position: fixed; bottom: 70px; left: 16px; right: 16px; z-index: 1001; gap: 10px; }
+  .confirm-bar.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash" style="position:fixed;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+  <div id="splash-car" style="margin-bottom:20px;animation:carMove 1s ease-in-out infinite alternate;">
+    <svg width="80" height="60" viewBox="0 0 80 60">
+      <rect x="0" y="0" width="80" height="60" rx="12" fill="#4ECDC4"/>
+      <rect x="12" y="28" width="56" height="20" rx="4" fill="#1a1a2e"/>
+      <rect x="18" y="18" width="36" height="16" rx="4" fill="#1a1a2e"/>
+      <circle cx="22" cy="50" r="6" fill="#4ECDC4"/>
+      <circle cx="58" cy="50" r="6" fill="#4ECDC4"/>
+      <circle cx="22" cy="50" r="3" fill="#1a1a2e"/>
+      <circle cx="58" cy="50" r="3" fill="#1a1a2e"/>
+      <text x="40" y="32" text-anchor="middle" font-size="13" font-weight="800" fill="#4ECDC4" font-family="sans-serif">P</text>
+    </svg>
+  </div>
+  <div style="font-size:24px;font-weight:800;color:#fff;">Estacion<span style="color:#4ECDC4;">Ate</span></div>
+  <div style="color:#555;font-size:13px;margin-top:8px;">Cargando el mapa...</div>
+</div>
+<style>
+@keyframes carMove { from { transform: translateX(-10px); } to { transform: translateX(10px); } }
+</style>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div style="margin-bottom:16px;">
+    <svg width="80" height="60" viewBox="0 0 80 60">
+      <rect x="0" y="0" width="80" height="60" rx="12" fill="#4ECDC4"/>
+      <rect x="12" y="28" width="56" height="20" rx="4" fill="#1a1a2e"/>
+      <rect x="18" y="18" width="36" height="16" rx="4" fill="#1a1a2e"/>
+      <circle cx="22" cy="50" r="6" fill="#4ECDC4"/>
+      <circle cx="58" cy="50" r="6" fill="#4ECDC4"/>
+      <circle cx="22" cy="50" r="3" fill="#1a1a2e"/>
+      <circle cx="58" cy="50" r="3" fill="#1a1a2e"/>
+      <text x="40" y="32" text-anchor="middle" font-size="13" font-weight="800" fill="#4ECDC4" font-family="sans-serif">P</text>
+    </svg>
+  </div>
+  <div class="login-title">Estacion<span>Ate</span></div>
+  <div class="login-sub">Encontrá y compartí lugares libres<br>en Buenos Aires</div>
+  <input class="login-input" id="login-nombre" type="text" placeholder="Tu nombre o apodo" maxlength="20">
+  <button class="login-btn" onclick="entrar()">Entrar al mapa →</button>
+  <div class="login-hint">Gratis · Sin registro · Solo Buenos Aires</div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="40" height="30" viewBox="0 0 80 60">
+        <rect x="0" y="0" width="80" height="60" rx="12" fill="#4ECDC4"/>
+        <rect x="12" y="28" width="56" height="20" rx="4" fill="#1a1a2e"/>
+        <rect x="18" y="18" width="36" height="16" rx="4" fill="#1a1a2e"/>
+        <circle cx="22" cy="50" r="6" fill="#4ECDC4"/>
+        <circle cx="58" cy="50" r="6" fill="#4ECDC4"/>
+        <circle cx="22" cy="50" r="3" fill="#1a1a2e"/>
+        <circle cx="58" cy="50" r="3" fill="#1a1a2e"/>
+        <text x="40" y="32" text-anchor="middle" font-size="11" font-weight="800" fill="#4ECDC4" font-family="sans-serif">P</text>
+      </svg>
+      <div class="app-title">Estacion<span>Ate</span></div>
+    </div>
+    <div class="user-info">
+      <div class="points-badge" id="pts-badge">★ 0 pts</div>
+    </div>
+  </div>
+
+  <!-- BUSCADOR -->
+  <div style="padding:8px 12px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;gap:8px;">
+    <input id="search-input" type="text" placeholder="🔎 Buscar calle o barrio..." style="flex:1;padding:8px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;" onkeydown="if(event.key==='Enter')buscarCalle()">
+    <button onclick="buscarCalle()" style="padding:8px 14px;border-radius:20px;background:#1a1a2e;color:#4ECDC4;border:none;font-size:13px;cursor:pointer;">Ir</button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-btn active" id="f-todos" onclick="filtrar('todos')">🗺️ Todos</button>
+    <button class="filter-btn" id="f-gratuito" onclick="filtrar('gratuito')">🆓 Gratuitos</button>
+    <button class="filter-btn" id="f-medido" onclick="filtrar('medido')">💰 Medidos</button>
+    <button class="filter-btn" id="f-noche" onclick="toggleNoche()">🌙 Noche</button>
+  </div>
+
+  <!-- MAPA -->
+  <div id="screen-mapa" class="active">
+    <div id="map"></div>
+  </div>
+
+  <!-- FEED -->
+  <div id="screen-feed" class="screen">
+    <div class="page-title">Últimos reportes</div>
+    <div id="feed-list"><div class="empty-state">Cargando reportes...</div></div>
+  </div>
+
+  <!-- RANKING -->
+  <div id="screen-ranking" class="screen">
+    <div class="page-title">Ranking semanal 🏆</div>
+    <div id="ranking-list"><div class="empty-state">Cargando ranking...</div></div>
+  </div>
+
+  <!-- PERFIL -->
+  <div id="screen-perfil" class="screen">
+    <div class="perfil-header">
+      <div class="perfil-avatar" id="perfil-avatar">?</div>
+      <div class="perfil-name" id="perfil-name">-</div>
+      <div class="perfil-level" id="perfil-level">Nivel 1 · Nuevo</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num" id="stat-reportes">0</div><div class="stat-label">Reportes</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-pts">0</div><div class="stat-label">Puntos</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-precision">-</div><div class="stat-label">Precisión</div></div>
+    </div>
+    <button onclick="cambiarTab('privacidad')" style="width:100%;padding:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;margin-bottom:14px;text-align:left;">🔒 Política de Privacidad →</button>
+    <div class="section-title">Medallas desbloqueadas</div>
+    <div class="badges-grid" id="badges-grid"></div>
+    <div class="section-title" style="margin-top:16px;">Logros disponibles</div>
+    <div id="logros-grid" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- PANTALLA PRIVACIDAD -->
+  <div id="screen-privacidad" class="screen">
+    <div style="padding:16px;padding-bottom:80px;">
+      <div style="font-size:20px;font-weight:700;color:var(--color-text-primary);margin-bottom:16px;">🔒 Política de Privacidad</div>
+      
+      <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;">¿Qué datos recopilamos?</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">Solo tu nombre o apodo que vos elegís, tu ubicación cuando usás la app activamente, y los reportes que hacés. No rastreamos tu ubicación en segundo plano.</div>
+      </div>
+
+      <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;">¿Compartimos tus datos?</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">No vendemos ni compartimos tus datos. Usamos Google Firebase para guardar los reportes y Google Maps para mostrar el mapa.</div>
+      </div>
+
+      <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;">Ubicación GPS</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">Solo se usa cuando estás usando la app. Podés denegar el permiso y seguir viendo el mapa igualmente.</div>
+      </div>
+
+      <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;">Menores de edad</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">EstacionAte no está dirigida a menores de 13 años.</div>
+      </div>
+
+      <div style="background:var(--color-background-secondary);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;">Contacto</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">Para consultas sobre privacidad escribinos a: deoliveraignacio@gmail.com</div>
+      </div>
+
+      <div style="font-size:11px;color:var(--color-text-tertiary);text-align:center;margin-top:20px;">
+        © 2026 EstacionAte — Ignacio De Olivera — Buenos Aires, Argentina<br>
+        Última actualización: 16 de marzo de 2026
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB reportar -->
+  <button class="report-fab" id="fab-btn" onclick="toggleSelectMode()">+</button>
+
+  <!-- Modo seleccion -->
+  <div class="crosshair" id="crosshair"></div>
+  <div class="select-mode-bar" id="select-bar">📍 Click izquierdo para seleccionar · Click derecho para reportar</div>
+  <div class="confirm-bar" id="confirm-bar">
+    <button class="btn-libre" onclick="confirmarReporte('libre')">🟢 Lugar LIBRE</button>
+    <button class="btn-ocupado" onclick="confirmarReporte('ocupado')">🔴 Se OCUPÓ</button>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <button class="nav-btn active" id="nav-mapa" onclick="cambiarTab('mapa')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      Mapa
+    </button>
+    <button class="nav-btn" id="nav-feed" onclick="cambiarTab('feed')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      Reportes
+    </button>
+    <button class="nav-btn" id="nav-ranking" onclick="cambiarTab('ranking')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Ranking
+    </button>
+    <button class="nav-btn" id="nav-perfil" onclick="cambiarTab('perfil')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      Perfil
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL REPORTE -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>¿Qué querés reportar?</h3>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:13px;color:#666;margin-bottom:8px;">Tipo de estacionamiento:</div>
+      <div style="display:flex;gap:8px;">
+        <button id="btn-gratuito" onclick="seleccionarTipo('gratuito')" style="flex:1;padding:10px;border-radius:10px;border:2px solid #2ECC71;background:#f0fff4;color:#27ae60;font-size:13px;font-weight:700;cursor:pointer;">🆓 Gratuito</button>
+        <button id="btn-medido" onclick="seleccionarTipo('medido')" style="flex:1;padding:10px;border-radius:10px;border:2px solid #ddd;background:#f9f9f9;color:#666;font-size:13px;font-weight:700;cursor:pointer;">💰 Medido</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-libre" onclick="reportar('libre')">🟢 Lugar LIBRE</button>
+      <button class="btn-ocupado" onclick="reportar('ocupado')">🔴 Se OCUPÓ</button>
+    </div>
+    <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:3000;border:1px solid #4ECDC4;"></div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, remove, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    databaseURL: "https://estacionate-e828e-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window.db = db;
+  window.dbRef = ref;
+  window.dbPush = push;
+  window.dbOnValue = onValue;
+  window.dbQuery = query;
+  window.dbOrderByChild = orderByChild;
+  window.dbLimitToLast = limitToLast;
+  window.firebaseReady = true;
+  window.dbRemove = remove;
+
+  // Escuchar reportes en tiempo real
+  const reportesRef = ref(db, 'reportes');
+  onValue(reportesRef, (snapshot) => {
+    const data = snapshot.val();
+    window.ultimaData = data;
+    actualizarFeed(data);
+    actualizarRanking(data);
+    actualizarMapa(data);
+  });
+</script>
+
+<!-- Google Maps -->
+<script>
+var map, userMarker, markers = [];
+var tipoEstac = 'gratuito';
+
+function seleccionarTipo(tipo) {
+  tipoEstac = tipo;
+  document.getElementById('btn-gratuito').style.border = tipo === 'gratuito' ? '2px solid #2ECC71' : '2px solid #ddd';
+  document.getElementById('btn-gratuito').style.background = tipo === 'gratuito' ? '#f0fff4' : '#f9f9f9';
+  document.getElementById('btn-gratuito').style.color = tipo === 'gratuito' ? '#27ae60' : '#666';
+  document.getElementById('btn-medido').style.border = tipo === 'medido' ? '2px solid #e67e22' : '2px solid #ddd';
+  document.getElementById('btn-medido').style.background = tipo === 'medido' ? '#fff8f0' : '#f9f9f9';
+  document.getElementById('btn-medido').style.color = tipo === 'medido' ? '#e67e22' : '#666';
+}
+var usuarioActual = localStorage.getItem('estacionate_user') || null;
+var usuarioPuntos = parseInt(localStorage.getItem('estacionate_pts') || '0');
+var usuarioReportes = parseInt(localStorage.getItem('estacionate_reportes') || '0');
+
+// BUSCADOR DE CALLES
+var geocoder;
+function buscarCalle() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  if (!geocoder) geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ address: q + ', Buenos Aires, Argentina' }, function(results, status) {
+    if (status === 'OK' && results[0]) {
+      map.setCenter(results[0].geometry.location);
+      map.setZoom(16);
+      mostrarToast('📍 ' + results[0].formatted_address);
+    } else {
+      mostrarToast('No se encontró esa dirección');
+    }
+  });
+}
+
+// VERIFICACION COLABORATIVA
+function verificar(id) {
+  if (!window.db) return;
+  const verRef = window.dbRef(window.db, 'verificaciones/' + id + '/' + usuarioActual);
+  window.dbPush(window.dbRef(window.db, 'verificaciones/' + id), { usuario: usuarioActual, ts: Date.now() });
+  usuarioPuntos += 5;
+  localStorage.setItem('estacionate_pts', usuarioPuntos);
+  actualizarPerfil();
+  mostrarToast('✅ Verificación confirmada +5 pts');
+}
+
+// SISTEMA DE LOGROS
+var LOGROS = [
+  { id: 'primer_reporte', icon: '🌟', nombre: 'Primer reporte', desc: 'Hacé tu primer reporte', req: 1 },
+  { id: 'cinco_reportes', icon: '🔥', nombre: 'En llamas', desc: '5 reportes realizados', req: 5 },
+  { id: 'diez_reportes', icon: '💪', nombre: 'Veterano', desc: '10 reportes realizados', req: 10 },
+  { id: 'cincuenta_reportes', icon: '🏆', nombre: 'Leyenda', desc: '50 reportes realizados', req: 50 },
+  { id: 'cien_puntos', icon: '⭐', nombre: '100 puntos', desc: 'Llegá a 100 puntos', req: 100, tipo: 'pts' },
+  { id: 'madrugador', icon: '🌅', nombre: 'Madrugador', desc: 'Reportá antes de las 7am', req: 1, tipo: 'hora' },
+];
+
+function verificarLogros() {
+  var obtenidos = JSON.parse(localStorage.getItem('estacionate_logros') || '[]');
+  var nuevos = [];
+  LOGROS.forEach(l => {
+    if (obtenidos.includes(l.id)) return;
+    var cumple = false;
+    if (l.tipo === 'pts') cumple = usuarioPuntos >= l.req;
+    else if (l.tipo === 'hora') cumple = new Date().getHours() < 7;
+    else cumple = usuarioReportes >= l.req;
+    if (cumple) { obtenidos.push(l.id); nuevos.push(l); }
+  });
+  if (nuevos.length) {
+    localStorage.setItem('estacionate_logros', JSON.stringify(obtenidos));
+    nuevos.forEach(l => mostrarToast('🏅 Nuevo logro: ' + l.icon + ' ' + l.nombre));
+  }
+  return obtenidos;
+}
+
+function renderLogros() {
+  var obtenidos = JSON.parse(localStorage.getItem('estacionate_logros') || '[]');
+  var grid = document.getElementById('badges-grid');
+  var logrosGrid = document.getElementById('logros-grid');
+  if (!grid || !logrosGrid) return;
+  grid.innerHTML = obtenidos.length ? obtenidos.map(id => {
+    var l = LOGROS.find(x => x.id === id);
+    return l ? '<div class="badge-chip">' + l.icon + ' ' + l.nombre + '</div>' : '';
+  }).join('') : '<div style="font-size:12px;color:var(--color-text-tertiary)">Todavía no desbloqueaste medallas</div>';
+  logrosGrid.innerHTML = LOGROS.filter(l => !obtenidos.includes(l.id)).map(l =>
+    '<div style="background:var(--color-background-secondary);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);display:flex;align-items:center;gap:6px;"><span style="font-size:16px;filter:grayscale(1);opacity:0.4">' + l.icon + '</span>' + l.desc + '</div>'
+  ).join('');
+}
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: -34.6037, lng: -58.3816 },
+    zoom: 14,
+    styles: [
+      { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+      { featureType: 'transit', stylers: [{ visibility: 'off' }] }
+    ],
+    disableDefaultUI: true,
+    zoomControl: true
+  });
+
+  // Click derecho global — reportar sin necesidad del boton +
+  map.addListener('rightclick', function(e) {
+    window.selectedLoc = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+    if (window.tempMarker) window.tempMarker.setMap(null);
+    window.tempMarker = new google.maps.Marker({
+      position: window.selectedLoc,
+      map,
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#FFD700', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      title: 'Lugar seleccionado'
+    });
+    tipoEstac = 'gratuito';
+    seleccionarTipo('gratuito');
+    document.getElementById('modal').classList.add('open');
+  });
+
+  // Aplicar modo noche si corresponde
+  aplicarEstiloMapa();
+
+  // Ubicación del usuario
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(pos => {
+      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!userMarker) {
+        userMarker = new google.maps.Marker({
+          position: loc, map,
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#4ECDC4', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          title: 'Tu ubicación'
+        });
+        map.setCenter(loc);
+      document.getElementById('splash').style.display = 'none';
+      } else {
+        userMarker.setPosition(loc);
+      }
+      window.userLoc = loc;
+    });
+  }
+}
+
+function actualizarMapa(data) {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+  if (!data || !map) return;
+  const ahora = Date.now();
+  const reportes = Object.entries(data);
+
+  // Agrupar por ubicacion cercana
+  const ocupados = [];
+  reportes.forEach(([id, r]) => {
+    if (r.tipo === 'ocupado') ocupados.push(r);
+  });
+
+  reportes.forEach(([id, r]) => {
+    // Solo mostrar libres, no ocupados
+    if (r.tipo !== 'libre') return;
+    // Aplicar filtro de tipo estacionamiento
+    if (filtroActivo === 'gratuito' && r.tipoEstac !== 'gratuito') return;
+    if (filtroActivo === 'medido' && r.tipoEstac !== 'medido') return;
+    // Expirar despues de 30 min
+    if (ahora - r.timestamp > 30 * 60 * 1000) return;
+    // Verificar si alguien reporto ocupado cerca despues
+    const fueOcupado = ocupados.some(o => {
+      const distLat = Math.abs(o.lat - r.lat);
+      const distLng = Math.abs(o.lng - r.lng);
+      return distLat < 0.0005 && distLng < 0.0005 && o.timestamp > r.timestamp;
+    });
+    if (fueOcupado) return;
+
+    const m = new google.maps.Marker({
+      position: { lat: r.lat, lng: r.lng },
+      map,
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#2ECC71', fillOpacity: 0.9, strokeColor: '#fff', strokeWeight: 2 },
+      title: 'Lugar libre — doble click para marcar como ocupado'
+    });
+
+    // Click simple — mostrar info
+    const info = new google.maps.InfoWindow({
+      content: '<div style="font-family:sans-serif;padding:6px 8px"><b>🟢 Lugar libre</b><br><small>Por ' + r.usuario + ' · hace ' + tiempoAtras(r.timestamp) + '</small><br><small style="color:#e67e22">⏱ ' + minutosRestantes(r.timestamp, r.tipo) + '</small><br><small style="color:#e74c3c">Doble click para marcar ocupado</small></div>'
+    });
+    m.addListener('click', () => info.open(map, m));
+
+    // Doble click — borrar el reporte instantaneamente
+    m.addListener('dblclick', function(e) {
+      e.stop();
+      if (window.dbRemove && window.db) {
+        window.dbRemove(window.dbRef(window.db, 'reportes/' + id));
+        mostrarToast('🔴 Lugar marcado como ocupado — pin eliminado');
+      }
+    });
+
+    markers.push(m);
+  });
+}
+
+function actualizarFeed(data) {
+  const el = document.getElementById('feed-list');
+  if (!data) { el.innerHTML = '<div class="empty-state">Todavía no hay reportes. ¡Sé el primero!</div>'; return; }
+  const lista = Object.values(data).sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
+  el.innerHTML = lista.map(r => `
+    <div class="feed-item">
+      <div class="feed-dot ${r.tipo}"></div>
+      <div class="feed-content">
+        <div class="feed-title">${r.tipo === 'libre' ? 'Lugar libre' : 'Se ocupó'} · ${r.barrio || 'Buenos Aires'}</div>
+        <div class="feed-sub">Reportado por ${r.usuario}</div>
+      </div>
+      <div class="feed-time">${tiempoAtras(r.timestamp)}</div>
+    </div>
+  `).join('');
+}
+
+function actualizarRanking(data) {
+  const el = document.getElementById('ranking-list');
+  if (!data) { el.innerHTML = '<div class="empty-state">Todavía no hay reportes.</div>'; return; }
+  const conteo = {};
+  Object.values(data).forEach(r => {
+    conteo[r.usuario] = (conteo[r.usuario] || 0) + 1;
+  });
+  const sorted = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  const medallas = ['gold', 'silver', 'bronze'];
+  el.innerHTML = sorted.map(([nombre, cant], i) => `
+    <div class="rank-card">
+      <div class="rank-num ${medallas[i] || ''}">${i + 1}</div>
+      <div class="rank-avatar">${nombre.substring(0,2).toUpperCase()}</div>
+      <div class="rank-info">
+        <div class="rank-name">${nombre}</div>
+        <div class="rank-reportes">${cant} reporte${cant !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="rank-pts">★ ${cant * 10} pts</div>
+    </div>
+  `).join('');
+}
+
+// FILTROS
+var filtroActivo = 'todos';
+var modoNocheManual = false;
+
+function filtrar(tipo) {
+  filtroActivo = tipo;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('f-' + tipo).classList.add('active');
+  if (window.ultimaData) actualizarMapa(window.ultimaData);
+}
+
+function toggleNoche() {
+  modoNocheManual = !modoNocheManual;
+  document.getElementById('f-noche').classList.toggle('active', modoNocheManual);
+  aplicarEstiloMapa();
+}
+
+function esNoche() {
+  if (modoNocheManual) return true;
+  const hora = new Date().getHours();
+  return hora >= 20 || hora < 7;
+}
+
+function aplicarEstiloMapa() {
+  if (!map) return;
+  if (esNoche()) {
+    map.setOptions({ styles: [
+      { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a4e' }] },
+      { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#4ECDC4' }, { weight: 0.5 }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d1b2a' }] },
+      { featureType: 'poi', stylers: [{ visibility: 'off' }] }
+    ]});
+  } else {
+    map.setOptions({ styles: [
+      { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+      { featureType: 'transit', stylers: [{ visibility: 'off' }] }
+    ]});
+  }
+}
+
+// Revisar modo noche cada minuto
+setInterval(aplicarEstiloMapa, 60000);
+
+// COMPARTIR POR WHATSAPP
+function compartirWhatsApp(lat, lng, tipo, tipoEstac) {
+  const texto = '🚗 EstacionAte: Hay un lugar ' + (tipoEstac === 'gratuito' ? '🆓 GRATUITO' : '💰 MEDIDO') + ' libre cerca!';
+  const url = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+  const msg = encodeURIComponent(texto + ' ' + url);
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+function tiempoAtras(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'ahora';
+  if (diff < 3600) return Math.floor(diff/60) + ' min';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h';
+  return Math.floor(diff/86400) + 'd';
+}
+
+function minutosRestantes(ts, tipo) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  const limite = tipo === 'libre' ? 3 : 5;
+  const restantes = limite - Math.floor(diff / 60);
+  if (restantes <= 0) return 'expira ahora';
+  if (restantes === 1) return 'expira en 1 min';
+  return 'expira en ' + restantes + ' min';
+}
+
+// Auto-refresh del mapa cada 60 segundos para limpiar pines expirados
+setInterval(() => {
+  if (window.db && window.dbRef && window.dbOnValue) {
+    const { ref, onValue } = { ref: window.dbRef, onValue: window.dbOnValue };
+    onValue(ref(window.db, 'reportes'), (snapshot) => {
+      actualizarMapa(snapshot.val());
+    }, { onlyOnce: true });
+  }
+}, 60 * 1000);
+
+function entrar() {
+  const nombre = document.getElementById('login-nombre').value.trim();
+  if (!nombre) { alert('Ingresá tu nombre o apodo'); return; }
+  usuarioActual = nombre;
+  localStorage.setItem('estacionate_user', nombre);
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  actualizarPerfil();
+}
+
+function actualizarPerfil() {
+  verificarLogros();
+  renderLogros();
+  if (!usuarioActual) return;
+  document.getElementById('pts-badge').textContent = '★ ' + usuarioPuntos + ' pts';
+  document.getElementById('perfil-avatar').textContent = usuarioActual.substring(0,2).toUpperCase();
+  document.getElementById('perfil-name').textContent = usuarioActual;
+  document.getElementById('stat-reportes').textContent = usuarioReportes;
+  document.getElementById('stat-pts').textContent = usuarioPuntos;
+  document.getElementById('stat-precision').textContent = usuarioReportes > 0 ? '90%' : '-';
+  const nivel = usuarioPuntos < 50 ? 'Nivel 1 · Nuevo' : usuarioPuntos < 150 ? 'Nivel 2 · Explorador' : usuarioPuntos < 300 ? 'Nivel 3 · Avanzado' : 'Nivel 4 · Experto';
+  document.getElementById('perfil-level').textContent = nivel;
+}
+
+var selectModeActivo = false;
+var clickListener = null;
+
+function toggleSelectMode() {
+  if (selectModeActivo) {
+    desactivarSelectMode();
+  } else {
+    activarSelectMode();
+  }
+}
+
+function activarSelectMode() {
+  selectModeActivo = true;
+  document.getElementById('crosshair').classList.add('active');
+  document.getElementById('select-bar').classList.add('active');
+  document.getElementById('confirm-bar').classList.add('active');
+  document.getElementById('fab-btn').textContent = '✕';
+  document.getElementById('fab-btn').style.background = '#E74C3C';
+
+  // Click izquierdo — seleccionar lugar y mostrar pin amarillo
+  clickListener = map.addListener('click', function(e) {
+    window.selectedLoc = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+    if (window.tempMarker) window.tempMarker.setMap(null);
+    window.tempMarker = new google.maps.Marker({
+      position: window.selectedLoc,
+      map,
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#FFD700', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      title: 'Lugar seleccionado'
+    });
+    mostrarToast('📍 Lugar seleccionado. Click derecho para reportar.');
+  });
+
+  // Click derecho — abrir modal de reporte en ese lugar
+  window.rightClickListener = map.addListener('rightclick', function(e) {
+    window.selectedLoc = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+    if (window.tempMarker) window.tempMarker.setMap(null);
+    window.tempMarker = new google.maps.Marker({
+      position: window.selectedLoc,
+      map,
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#FFD700', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      title: 'Lugar seleccionado'
+    });
+    // Resetear tipo y abrir modal
+    tipoEstac = 'gratuito';
+    seleccionarTipo('gratuito');
+    document.getElementById('modal').classList.add('open');
+  });
+
+  // Click derecho en el mapa sin modo activo — acceso rapido
+  window.mapRightClick = map.addListener('rightclick', function(e) {
+    if (!selectModeActivo) {
+      window.selectedLoc = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      tipoEstac = 'gratuito';
+      seleccionarTipo('gratuito');
+      document.getElementById('modal').classList.add('open');
+    }
+  });
+}
+
+function desactivarSelectMode() {
+  selectModeActivo = false;
+  document.getElementById('crosshair').classList.remove('active');
+  document.getElementById('select-bar').classList.remove('active');
+  document.getElementById('confirm-bar').classList.remove('active');
+  document.getElementById('fab-btn').textContent = '+';
+  document.getElementById('fab-btn').style.background = '#4ECDC4';
+  if (clickListener) { google.maps.event.removeListener(clickListener); clickListener = null; }
+  if (window.rightClickListener) { google.maps.event.removeListener(window.rightClickListener); window.rightClickListener = null; }
+  if (window.tempMarker) { window.tempMarker.setMap(null); window.tempMarker = null; }
+  window.selectedLoc = null;
+}
+
+function abrirModal() {
+  if (!window.userLoc) { mostrarToast('Activá el GPS para reportar 📍'); return; }
+  document.getElementById('modal').classList.add('open');
+}
+
+function cerrarModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function confirmarReporte(tipo) {
+  // Usar ubicacion seleccionada en el mapa, o centro del mapa, o GPS
+  var loc = window.selectedLoc || map.getCenter() && { lat: map.getCenter().lat(), lng: map.getCenter().lng() } || window.userLoc;
+  if (!loc) { mostrarToast('No se pudo obtener la ubicación'); return; }
+  if (!window.firebaseReady) { mostrarToast('Esperá un momento...'); return; }
+  const reporte = {
+    tipo,
+    tipoEstac: tipoEstac,
+    lat: loc.lat,
+    lng: loc.lng,
+    usuario: usuarioActual,
+    timestamp: Date.now(),
+    barrio: 'Buenos Aires'
+  };
+  window.dbPush(window.dbRef(window.db, 'reportes'), reporte);
+  usuarioPuntos += 10;
+  usuarioReportes += 1;
+  localStorage.setItem('estacionate_pts', usuarioPuntos);
+  localStorage.setItem('estacionate_reportes', usuarioReportes);
+  actualizarPerfil();
+  desactivarSelectMode();
+  mostrarToast(tipo === 'libre' ? '🟢 ¡Reportaste un lugar libre! +10 pts' : '🔴 ¡Gracias por avisar! +10 pts');
+}
+
+function reportar(tipo) {
+  cerrarModal();
+  confirmarReporte(tipo);
+}
+
+function cambiarTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  document.querySelector('.report-fab').style.display = tab === 'mapa' ? 'flex' : 'none';
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// Auto-login si ya entró antes
+setTimeout(() => {
+  var s = document.getElementById('splash');
+  if (s) s.style.display = 'none';
+}, 3000);
+
+window.onload = function() {
+  const guardado = localStorage.getItem('estacionate_user');
+  if (guardado) {
+    usuarioActual = guardado;
+    usuarioPuntos = parseInt(localStorage.getItem('estacionate_pts') || '0');
+    usuarioReportes = parseInt(localStorage.getItem('estacionate_reportes') || '0');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    actualizarPerfil();
+  }
+}
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD312eCyHcvPHQtF3oEro9xUZgRGNaBQ9I&callback=initMap" async defer></script>
+</body>
+</html>
