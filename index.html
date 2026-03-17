@@ -317,10 +317,15 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getDatabase, ref, push, remove, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
   const firebaseConfig = {
-    databaseURL: "https://estacionate-e828e-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyD312eCyHcvPHQtF3oEro9xUZgRGNaBQ9I",
+    authDomain: "estacionate-e828e.firebaseapp.com",
+    databaseURL: "https://estacionate-e828e-default-rtdb.firebaseio.com",
+    projectId: "estacionate-e828e",
+    storageBucket: "estacionate-e828e.appspot.com"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -333,6 +338,30 @@
   window.dbOrderByChild = orderByChild;
   window.dbLimitToLast = limitToLast;
   window.firebaseReady = true;
+
+  // Inicializar Auth
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  window.firebaseAuth = auth;
+  window.googleProvider = provider;
+  window.signInWithPopup = signInWithPopup;
+  window.signOut = signOut;
+
+  // Detectar si el usuario ya está logueado
+  onAuthStateChanged(auth, (user) => {
+    if (user && !window.authHandled) {
+      window.authHandled = true;
+      usuarioActual = user.displayName || user.email.split('@')[0];
+      localStorage.setItem('estacionate_user', usuarioActual);
+      localStorage.setItem('estacionate_email', user.email);
+      localStorage.setItem('estacionate_tipo', 'google');
+      localStorage.setItem('estacionate_foto', user.photoURL || '');
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      actualizarPerfil();
+      mostrarToast('Bienvenido ' + usuarioActual + ' ✅');
+    }
+  });
   window.dbRemove = remove;
 
   // Escuchar reportes en tiempo real
@@ -664,7 +693,13 @@ function actualizarPerfil() {
   renderLogros();
   if (!usuarioActual) return;
   document.getElementById('pts-badge').textContent = '★ ' + usuarioPuntos + ' pts';
-  document.getElementById('perfil-avatar').textContent = usuarioActual.substring(0,2).toUpperCase();
+  var foto = localStorage.getItem('estacionate_foto');
+  var avatarEl = document.getElementById('perfil-avatar');
+  if (foto && foto !== '' && avatarEl) {
+    avatarEl.innerHTML = '<img src="' + foto + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent=usuarioActual.substring(0,2).toUpperCase()">';
+  } else if (avatarEl) {
+    avatarEl.textContent = usuarioActual.substring(0,2).toUpperCase();
+  }
   document.getElementById('perfil-name').textContent = usuarioActual;
   const tipo = localStorage.getItem('estacionate_tipo');
   const email = localStorage.getItem('estacionate_email');
@@ -694,9 +729,34 @@ function mostrarTab(tab) {
   document.getElementById('tab-guest').style.color = tab === 'guest' ? '#1a1a2e' : '#4ECDC4';
 }
 
-// REGISTRO CON REDES SOCIALES
+// LOGIN CON GOOGLE REAL
 function registrarConRed(red) {
-  mostrarToast('Próximamente: login con ' + red + ' 🚀');
+  if (red === 'Google') {
+    if (!window.firebaseAuth || !window.googleProvider) {
+      mostrarToast('Cargando... intentá de nuevo');
+      return;
+    }
+    window.signInWithPopup(window.firebaseAuth, window.googleProvider)
+      .then((result) => {
+        const user = result.user;
+        usuarioActual = user.displayName || user.email.split('@')[0];
+        localStorage.setItem('estacionate_user', usuarioActual);
+        localStorage.setItem('estacionate_email', user.email);
+        localStorage.setItem('estacionate_tipo', 'google');
+        localStorage.setItem('estacionate_foto', user.photoURL || '');
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        actualizarPerfil();
+        mostrarToast('Bienvenido ' + usuarioActual + ' ✅');
+      })
+      .catch((error) => {
+        if (error.code !== 'auth/popup-closed-by-user') {
+          mostrarToast('Error al iniciar sesión. Intentá de nuevo.');
+        }
+      });
+  } else {
+    mostrarToast('Próximamente: login con ' + red + ' 🚀');
+  }
 }
 
 // REGISTRO CON CUENTA
@@ -732,9 +792,14 @@ function entrarSinRegistro() {
 // CERRAR SESION
 function cerrarSesion() {
   if (!confirm('¿Cerrar sesión?')) return;
+  if (window.firebaseAuth && localStorage.getItem('estacionate_tipo') === 'google') {
+    window.signOut(window.firebaseAuth);
+  }
   localStorage.removeItem('estacionate_user');
   localStorage.removeItem('estacionate_email');
   localStorage.removeItem('estacionate_tipo');
+  localStorage.removeItem('estacionate_foto');
+  window.authHandled = false;
   location.reload();
 }
 
@@ -864,6 +929,49 @@ function mostrarToast(msg) {
 }
 
 // Auto-login si ya entró antes
+// FOTO DE FONDO SEGUN HORA
+function aplicarFotoFondo() {
+  var hora = new Date().getHours();
+  var esDeDia = hora >= 7 && hora < 20;
+  var loginBg = document.getElementById('login-bg');
+  if (!loginBg) return;
+  if (esDeDia) {
+    // Palermo BA de dia - Unsplash
+    loginBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=1200&q=80')";
+  } else {
+    // Av 9 de Julio de noche - Unsplash
+    loginBg.style.backgroundImage = "url('https://images.unsplash.com/photo-1589909202803-8f4aadce1849?w=1200&q=80')";
+  }
+}
+
+// Foto alternativa por si falla Unsplash
+function aplicarFotoFallback() {
+  var hora = new Date().getHours();
+  var esDeDia = hora >= 7 && hora < 20;
+  var loginBg = document.getElementById('login-bg');
+  if (!loginBg) return;
+  if (esDeDia) {
+    loginBg.style.background = 'linear-gradient(135deg, #74b9ff 0%, #0984e3 40%, #2d3436 100%)';
+  } else {
+    loginBg.style.background = 'linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%)';
+  }
+}
+
+// Cargar foto con fallback
+var img = new Image();
+var hora = new Date().getHours();
+var esDeDia = hora >= 7 && hora < 20;
+if (esDeDia) {
+  img.src = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1200&q=80';
+} else {
+  img.src = 'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=1200&q=80';
+}
+img.onload = function() {
+  var loginBg = document.getElementById('login-bg');
+  if (loginBg) loginBg.style.backgroundImage = 'url(' + img.src + ')';
+};
+img.onerror = aplicarFotoFallback;
+
 setTimeout(() => {
   var s = document.getElementById('splash');
   if (s) s.style.display = 'none';
